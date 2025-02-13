@@ -26,6 +26,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history to preserve data files
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -45,7 +47,9 @@ jobs:
         echo "MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}" >> .env
     
     - name: Ensure docs directory exists
-      run: mkdir -p docs
+      run: |
+        mkdir -p docs
+        touch docs/.nojekyll
     
     - name: Run bots
       run: |
@@ -57,6 +61,9 @@ jobs:
         sleep 30
         # Kill background processes
         pkill -f "python"
+        # Ensure data files exist
+        [ -f docs/market_data.json ] || echo '{"gateio":{"timestamps":[],"prices":[],"volumes":[]},"mexc":{"timestamps":[],"prices":[],"volumes":[]}}' > docs/market_data.json
+        [ -f docs/volume_data.json ] || echo '{"gateio":{"timestamps":[],"accumulated_volume":[],"market_share":[]},"mexc":{"timestamps":[],"accumulated_volume":[],"market_share":[]}}' > docs/volume_data.json
     
     - name: Setup Pages
       uses: actions/configure-pages@v4

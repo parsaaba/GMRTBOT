@@ -1,0 +1,14 @@
+{
+  "gateio": {
+    "timestamps": [],
+    "prices": [],
+    "volumes": [],
+    "last_update": ""
+  },
+  "mexc": {
+    "timestamps": [],
+    "prices": [],
+    "volumes": [],
+    "last_update": ""
+  }
+}
