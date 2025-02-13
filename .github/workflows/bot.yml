@@ -4,6 +4,13 @@ on:
   schedule:
     - cron: '*/5 * * * *'  # Runs every 5 minutes
   workflow_dispatch:  # Allows manual triggering
+  push:
+    branches: [ main ]  # Also run on pushes to main
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   run-bots:
@@ -29,6 +36,9 @@ jobs:
         echo "MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}" >> .env
         echo "MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}" >> .env
     
+    - name: Ensure docs directory exists
+      run: mkdir -p docs
+    
     - name: Run bots
       run: |
         # Start multi_exchange_tracker in background
@@ -40,9 +50,14 @@ jobs:
         # Kill background processes
         pkill -f "python"
     
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
+    - name: Setup Pages
+      uses: actions/configure-pages@v2
+    
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v1
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs
-        keep_files: true
+        path: 'docs'
+    
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v1
