@@ -9,6 +9,8 @@ import os
 import pandas as pd
 import matplotlib.dates as mdates
 import matplotlib.patheffects as path_effects
+import json
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -176,9 +178,41 @@ class VolumeVisualizer:
         
         plt.tight_layout()
         
+    def save_data(self):
+        """Save volume data to JSON file"""
+        data = {
+            'gateio': {
+                'timestamps': [t.isoformat() for t in self.exchange_data['gateio']['timestamps']],
+                'accumulated_volume': self.exchange_data['gateio']['accumulated_volume'],
+                'market_share': self.exchange_data['gateio']['market_share'],
+                'last_update': datetime.now().isoformat()
+            },
+            'mexc': {
+                'timestamps': [t.isoformat() for t in self.exchange_data['mexc']['timestamps']],
+                'accumulated_volume': self.exchange_data['mexc']['accumulated_volume'],
+                'market_share': self.exchange_data['mexc']['market_share'],
+                'last_update': datetime.now().isoformat()
+            }
+        }
+        
+        with open('docs/volume_data.json', 'w') as f:
+            json.dump(data, f, indent=2)
+    
     def run(self):
-        ani = FuncAnimation(self.fig, self.update_plot, interval=3000)
-        plt.show()
+        """Run the volume visualizer"""
+        # Create docs directory if it doesn't exist
+        os.makedirs('docs', exist_ok=True)
+        
+        while True:
+            try:
+                self.fetch_data()
+                self.save_data()
+                time.sleep(5)  # Update every 5 seconds
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                logging.error(f"Error in main loop: {str(e)}")
+                time.sleep(5)
 
 if __name__ == '__main__':
     visualizer = VolumeVisualizer()

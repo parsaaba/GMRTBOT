@@ -6,7 +6,7 @@ on:
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
-  deploy-streamlit:
+  run-bots:
     runs-on: ubuntu-latest
     
     steps:
@@ -29,37 +29,20 @@ jobs:
         echo "MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}" >> .env
         echo "MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}" >> .env
     
-    - name: Deploy Streamlit app
-      uses: streamlit/streamlit-deploy@v1
-      with:
-        app-name: gmrt-tracker
-        s3-bucket-name: ${{ secrets.AWS_S3_BUCKET }}
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
-    
-  run-bot:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-    
-    - name: Install dependencies
+    - name: Run bots
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        # Start multi_exchange_tracker in background
+        python multi_exchange_tracker.py &
+        # Start volume_visualizer in background
+        python volume_visualizer.py &
+        # Wait for data collection (30 seconds)
+        sleep 30
+        # Kill background processes
+        pkill -f "python"
     
-    - name: Create env file
-      run: |
-        echo "API_KEY=${{ secrets.API_KEY }}" >> .env
-        echo "API_SECRET=${{ secrets.API_SECRET }}" >> .env
-        echo "MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}" >> .env
-        echo "MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}" >> .env
-    
-    - name: Run bot
-      run: python whale_tracker.py
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs
+        keep_files: true

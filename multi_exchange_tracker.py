@@ -6,6 +6,8 @@ import logging
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+import json
+import time
 
 # Load environment variables
 load_dotenv()
@@ -196,10 +198,43 @@ class MultiExchangeTracker:
         except Exception as e:
             logging.error(f"Error updating plot: {str(e)}")
     
+    def save_data(self):
+        """Save market data to JSON file"""
+        data = {
+            'gateio': {
+                'timestamps': [t.isoformat() for t in self.exchange_data['gateio']['timestamps']],
+                'prices': self.exchange_data['gateio']['prices'],
+                'volumes': self.exchange_data['gateio']['bids_volumes'],
+                'last_update': datetime.now().isoformat()
+            },
+            'mexc': {
+                'timestamps': [t.isoformat() for t in self.exchange_data['mexc']['timestamps']],
+                'prices': self.exchange_data['mexc']['prices'],
+                'volumes': self.exchange_data['mexc']['bids_volumes'],
+                'last_update': datetime.now().isoformat()
+            }
+        }
+        
+        with open('docs/market_data.json', 'w') as f:
+            json.dump(data, f, indent=2)
+            
     def run(self):
+        """Run the market tracker"""
         logging.info("Starting multi-exchange tracker...")
         ani = FuncAnimation(self.fig, self.update_plot, interval=3000)
         plt.show()
+        
+        while True:
+            try:
+                self.fetch_exchange_data(self.gateio, 'gateio')
+                self.fetch_exchange_data(self.mexc, 'mexc')
+                self.save_data()
+                time.sleep(5)  # Update every 5 seconds
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                logging.error(f"Error in main loop: {str(e)}")
+                time.sleep(5)
 
 if __name__ == "__main__":
     tracker = MultiExchangeTracker()
