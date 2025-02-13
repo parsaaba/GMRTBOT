@@ -178,9 +178,8 @@ class VolumeVisualizer:
         
         plt.tight_layout()
         
-    def save_data(self):
-        """Save volume data to JSON file"""
-        data = {
+    def save_volume_data(self):
+        volume_data = {
             'gateio': {
                 'timestamps': [t.isoformat() for t in self.exchange_data['gateio']['timestamps']],
                 'accumulated_volume': self.exchange_data['gateio']['accumulated_volume'],
@@ -195,8 +194,9 @@ class VolumeVisualizer:
             }
         }
         
+        os.makedirs('docs', exist_ok=True)
         with open('docs/volume_data.json', 'w') as f:
-            json.dump(data, f, indent=2)
+            json.dump(volume_data, f, indent=2)
     
     def run(self):
         """Run the volume visualizer"""
@@ -206,8 +206,8 @@ class VolumeVisualizer:
         while True:
             try:
                 self.fetch_data()
-                self.save_data()
-                time.sleep(5)  # Update every 5 seconds
+                self.save_volume_data()  # Save data after each update
+                time.sleep(30)  # Update every 30 seconds
             except KeyboardInterrupt:
                 break
             except Exception as e:

@@ -198,9 +198,8 @@ class MultiExchangeTracker:
         except Exception as e:
             logging.error(f"Error updating plot: {str(e)}")
     
-    def save_data(self):
-        """Save market data to JSON file"""
-        data = {
+    def save_market_data(self):
+        market_data = {
             'gateio': {
                 'timestamps': [t.isoformat() for t in self.exchange_data['gateio']['timestamps']],
                 'prices': self.exchange_data['gateio']['prices'],
@@ -215,26 +214,22 @@ class MultiExchangeTracker:
             }
         }
         
+        os.makedirs('docs', exist_ok=True)
         with open('docs/market_data.json', 'w') as f:
-            json.dump(data, f, indent=2)
+            json.dump(market_data, f, indent=2)
             
     def run(self):
         """Run the market tracker"""
         logging.info("Starting multi-exchange tracker...")
-        ani = FuncAnimation(self.fig, self.update_plot, interval=3000)
-        plt.show()
-        
         while True:
             try:
                 self.fetch_exchange_data(self.gateio, 'gateio')
                 self.fetch_exchange_data(self.mexc, 'mexc')
-                self.save_data()
-                time.sleep(5)  # Update every 5 seconds
-            except KeyboardInterrupt:
-                break
+                self.save_market_data()  # Save data after each update
+                time.sleep(30)  # Update every 30 seconds
             except Exception as e:
-                logging.error(f"Error in main loop: {str(e)}")
-                time.sleep(5)
+                logging.error(f"Error in run loop: {str(e)}")
+                time.sleep(5)  # Wait before retrying
 
 if __name__ == "__main__":
     tracker = MultiExchangeTracker()
