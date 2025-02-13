@@ -1,0 +1,15 @@
+[Unit]
+Description=GMRT Trading Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=parsabahmani
+WorkingDirectory=/Users/parsabahmani/Desktop/GMRT Bot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 whale_tracker.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
