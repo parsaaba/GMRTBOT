@@ -4,11 +4,11 @@ title: GMRT Market Tracker
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
+    <title>GMRT Market Tracker</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMRT Market Tracker</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
@@ -49,12 +49,22 @@ title: GMRT Market Tracker
         h1, h2 {
             color: #00ff00;
         }
+        .error-message {
+            color: #ff4444;
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>GMRT Market Tracker</h1>
         
+        <div class="error-message" id="error-message">
+            Unable to load market data. Please try again later.
+        </div>
+
         <div class="stats-container">
             <div class="stat-card">
                 <h3>Gate.io Price</h3>
@@ -92,92 +102,99 @@ title: GMRT Market Tracker
 
     <script>
         function updateCharts() {
-            // Fetch market data
-            $.getJSON('market_data.json', function(marketData) {
-                // Update price stats
-                $('#gateio-price').text('$' + marketData.gateio.prices[marketData.gateio.prices.length - 1].toFixed(4));
-                $('#mexc-price').text('$' + marketData.mexc.prices[marketData.mexc.prices.length - 1].toFixed(4));
-                
-                // Create price chart
-                const priceData = [{
-                    x: marketData.gateio.timestamps.map(t => new Date(t)),
-                    y: marketData.gateio.prices,
-                    name: 'Gate.io',
-                    type: 'scatter',
-                    line: {color: '#00ffff'}
-                }, {
-                    x: marketData.mexc.timestamps.map(t => new Date(t)),
-                    y: marketData.mexc.prices,
-                    name: 'MEXC',
-                    type: 'scatter',
-                    line: {color: '#ff00ff'}
-                }];
+            // Load market data
+            $.getJSON('market_data.json')
+                .done(function(marketData) {
+                    // Update price stats
+                    $('#gateio-price').text('$' + marketData.gateio.prices[marketData.gateio.prices.length - 1].toFixed(4));
+                    $('#mexc-price').text('$' + marketData.mexc.prices[marketData.mexc.prices.length - 1].toFixed(4));
+                    
+                    // Create price chart
+                    const priceData = [{
+                        x: marketData.gateio.timestamps.map(t => new Date(t)),
+                        y: marketData.gateio.prices,
+                        name: 'Gate.io',
+                        type: 'scatter',
+                        line: {color: '#00ffff'}
+                    }, {
+                        x: marketData.mexc.timestamps.map(t => new Date(t)),
+                        y: marketData.mexc.prices,
+                        name: 'MEXC',
+                        type: 'scatter',
+                        line: {color: '#ff00ff'}
+                    }];
 
-                Plotly.newPlot('price-chart', priceData, {
-                    template: 'plotly_dark',
-                    title: 'GMRT Price',
-                    xaxis: {title: 'Time'},
-                    yaxis: {title: 'Price (USDT)'}
-                });
-            });
+                    Plotly.newPlot('price-chart', priceData, {
+                        template: 'plotly_dark',
+                        title: 'GMRT Price',
+                        xaxis: {title: 'Time'},
+                        yaxis: {title: 'Price (USDT)'}
+                    });
 
-            // Fetch volume data
-            $.getJSON('volume_data.json', function(volumeData) {
-                // Update volume stats
-                $('#gateio-volume').text(volumeData.gateio.accumulated_volume[volumeData.gateio.accumulated_volume.length - 1].toFixed(2) + ' GMRT');
-                $('#mexc-volume').text(volumeData.mexc.accumulated_volume[volumeData.mexc.accumulated_volume.length - 1].toFixed(2) + ' GMRT');
-                
-                // Create volume chart
-                const volumeChart = [{
-                    x: volumeData.gateio.timestamps.map(t => new Date(t)),
-                    y: volumeData.gateio.accumulated_volume,
-                    name: 'Gate.io',
-                    type: 'scatter',
-                    line: {color: '#00ffff'}
-                }, {
-                    x: volumeData.mexc.timestamps.map(t => new Date(t)),
-                    y: volumeData.mexc.accumulated_volume,
-                    name: 'MEXC',
-                    type: 'scatter',
-                    line: {color: '#ff00ff'}
-                }];
-
-                Plotly.newPlot('volume-chart', volumeChart, {
-                    template: 'plotly_dark',
-                    title: 'Accumulated Volume',
-                    xaxis: {title: 'Time'},
-                    yaxis: {title: 'Volume (GMRT)'}
+                    $('#error-message').hide();
+                })
+                .fail(function() {
+                    $('#error-message').show();
                 });
 
-                // Create market share chart
-                const shareChart = [{
-                    x: volumeData.gateio.timestamps.map(t => new Date(t)),
-                    y: volumeData.gateio.market_share,
-                    name: 'Gate.io',
-                    type: 'scatter',
-                    fill: 'tonexty',
-                    line: {color: '#00ffff'}
-                }, {
-                    x: volumeData.mexc.timestamps.map(t => new Date(t)),
-                    y: volumeData.mexc.market_share,
-                    name: 'MEXC',
-                    type: 'scatter',
-                    fill: 'tonexty',
-                    line: {color: '#ff00ff'}
-                }];
+            // Load volume data
+            $.getJSON('volume_data.json')
+                .done(function(volumeData) {
+                    // Update volume stats
+                    $('#gateio-volume').text(volumeData.gateio.accumulated_volume[volumeData.gateio.accumulated_volume.length - 1].toFixed(2) + ' GMRT');
+                    $('#mexc-volume').text(volumeData.mexc.accumulated_volume[volumeData.mexc.accumulated_volume.length - 1].toFixed(2) + ' GMRT');
+                    
+                    // Create volume chart
+                    const volumeChart = [{
+                        x: volumeData.gateio.timestamps.map(t => new Date(t)),
+                        y: volumeData.gateio.accumulated_volume,
+                        name: 'Gate.io',
+                        type: 'scatter',
+                        line: {color: '#00ffff'}
+                    }, {
+                        x: volumeData.mexc.timestamps.map(t => new Date(t)),
+                        y: volumeData.mexc.accumulated_volume,
+                        name: 'MEXC',
+                        type: 'scatter',
+                        line: {color: '#ff00ff'}
+                    }];
 
-                Plotly.newPlot('market-share-chart', shareChart, {
-                    template: 'plotly_dark',
-                    title: 'Market Share (%)',
-                    xaxis: {title: 'Time'},
-                    yaxis: {title: 'Share (%)', range: [0, 100]}
+                    Plotly.newPlot('volume-chart', volumeChart, {
+                        template: 'plotly_dark',
+                        title: 'Accumulated Volume',
+                        xaxis: {title: 'Time'},
+                        yaxis: {title: 'Volume (GMRT)'}
+                    });
+
+                    // Create market share chart
+                    const shareChart = [{
+                        x: volumeData.gateio.timestamps.map(t => new Date(t)),
+                        y: volumeData.gateio.market_share,
+                        name: 'Gate.io',
+                        type: 'scatter',
+                        fill: 'tonexty',
+                        line: {color: '#00ffff'}
+                    }, {
+                        x: volumeData.mexc.timestamps.map(t => new Date(t)),
+                        y: volumeData.mexc.market_share,
+                        name: 'MEXC',
+                        type: 'scatter',
+                        fill: 'tonexty',
+                        line: {color: '#ff00ff'}
+                    }];
+
+                    Plotly.newPlot('market-share-chart', shareChart, {
+                        template: 'plotly_dark',
+                        title: 'Market Share (%)',
+                        xaxis: {title: 'Time'},
+                        yaxis: {title: 'Share (%)', range: [0, 100]}
+                    });
                 });
-            });
         }
 
-        // Update every 5 seconds
+        // Update every 30 seconds
         updateCharts();
-        setInterval(updateCharts, 5000);
+        setInterval(updateCharts, 30000);
     </script>
 </body>
 </html>

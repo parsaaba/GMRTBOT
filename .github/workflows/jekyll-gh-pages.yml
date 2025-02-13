@@ -2,39 +2,86 @@
 name: Deploy Jekyll with GitHub Pages dependencies preinstalled
 
 on:
-  # Runs on pushes targeting the default branch
+  schedule:
+    - cron: '*/5 * * * *'  # Run every 5 minutes
   push:
     branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # Build job
-  build:
+  # Data collection job
+  collect-data:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Create env file
+        run: |
+          echo "API_KEY=${{ secrets.API_KEY }}" >> .env
+          echo "API_SECRET=${{ secrets.API_SECRET }}" >> .env
+          echo "MEXC_API_KEY=${{ secrets.MEXC_API_KEY }}" >> .env
+          echo "MEXC_SECRET_KEY=${{ secrets.MEXC_SECRET_KEY }}" >> .env
+      
+      - name: Run bots and collect data
+        run: |
+          # Start multi_exchange_tracker in background
+          python multi_exchange_tracker.py &
+          # Start volume_visualizer in background
+          python volume_visualizer.py &
+          # Wait for data collection
+          sleep 30
+          # Kill background processes
+          pkill -f "python"
+      
+      - name: Upload data
+        uses: actions/upload-artifact@v3
+        with:
+          name: market-data
+          path: docs/*.json
+
+  # Build job
+  build:
+    needs: collect-data
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Download market data
+        uses: actions/download-artifact@v3
+        with:
+          name: market-data
+          path: docs
+      
       - name: Setup Pages
         uses: actions/configure-pages@v4
+      
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
           source: ./docs
           destination: ./_site
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
