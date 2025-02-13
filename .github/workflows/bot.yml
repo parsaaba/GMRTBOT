@@ -64,7 +64,7 @@ jobs:
         # Ensure data files exist
         [ -f docs/market_data.json ] || echo '{"gateio":{"timestamps":[],"prices":[],"volumes":[]},"mexc":{"timestamps":[],"prices":[],"volumes":[]}}' > docs/market_data.json
         [ -f docs/volume_data.json ] || echo '{"gateio":{"timestamps":[],"accumulated_volume":[],"market_share":[]},"mexc":{"timestamps":[],"accumulated_volume":[],"market_share":[]}}' > docs/volume_data.json
-    
+n    
     - name: Setup Pages
       uses: actions/configure-pages@v4
     
